@@ -13,7 +13,9 @@ import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
-# Part 1 | Building the Blockchain
+####################################
+# Part 1 | Building the Blockchain #
+####################################
 
 class Blockchain:
 
@@ -113,8 +115,9 @@ class Blockchain:
             return True
         return False
 
-
-# Part 2 | Mining the Blockchain
+##################################
+# Part 2 | Mining the Blockchain #
+##################################
 
 # Creating Web App
 app = Flask(__name__)
@@ -168,7 +171,35 @@ def add_transaction():
     response = {'message': f'This transaction will be added to Block {index}'}
     return jsonify(response), 201
 
-# 3 | Decentralizing our Blockchain
+#####################################
+# 3 | Decentralizing our Blockchain #
+#####################################
+
+# Connecting new nodes
+@app.route('/connect_node', methods=['POST'])
+def connect_node():
+    json = request.get_json()
+    nodes = json.get('nodes')
+    if nodes is None:
+        return "No Node", 401
+    for nodes in nodes:
+        blockchain.add_node(node)
+    response = {'message': 'All nodes have been connected. The MythCoin blockchain now contains the following nodes:' ,
+                'total_nodes': list(blockchain.nodes)}
+    return jsonify(response), 201
+
+# Replacing the chain by the longest chain if needed
+@app.route('/replace_chain', methods=['GET'])
+def replace_chain():
+    is_chain_replaced = blockchain.replace_chain()
+    if is_chain_replaced:
+        response = {'message': 'The chain has been replaced with a more up to date chain',
+                    'new_chain': blockchain.chain}
+    else:
+        response = {'message': 'The chain has remained the same and is up to date',
+                    'actual_chain': blockchain.chain}
+    return jsonify(response), 200
+
 
 
 

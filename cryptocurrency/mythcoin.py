@@ -101,7 +101,17 @@ class Blockchain:
         longest_chain = None
         max_length = len(self.chain)
         for node in network:
-            response = requests.get(f'{node}/get_chain')
+            response = requests.get(f'http://{node}/get_chain')
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+                if length > max_length and self.is_chain_valid(chain)
+                max_length = length
+                longest_chain = chain
+        if longest_chain:
+            self.chain = longest_chain
+            return True
+        return False
 
 
 # Part 2 | Mining the Blockchain
@@ -109,6 +119,9 @@ class Blockchain:
 # Creating Web App
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+# Creating an address for the node on port 5000
+node_address = str(uuid()).replace('-', '')
 
 # Creating an instance of a Blockchain
 blockchain = Blockchain()
@@ -120,12 +133,14 @@ def mine_block():
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
+    blockchain.add_transaction(sender = node_address, reciever = 'Kenneth', amount = 1)
     block = blockchain.create_block(proof, previous_hash)
     response = {'message': 'Congratulations, you just mined a block!',
                 'index': block['index'],
                 'timestamp': block['timestamp'],
                 'poof': block['proof'],
-                'previous_hash': block ['previous_hash']}
+                'previous_hash': block ['previous_hash'],
+                'transactions': block['transactions']}
     return jsonify(response), 200
 
 # Getting the full Blockchain | Response to a GET http request
@@ -141,6 +156,17 @@ def get_validity_check():
     response = {'chain': blockchain.chain,
                 'validity_check': blockchain.is_chain_valid(blockchain.chain)}
     return jsonify(response), 200
+
+# Adding new transaction to the blockchain
+@app.route('/add_transaction', methods=['POST'])
+def add_transaction():
+    json = request.get_json()
+    transaction_keys = ['sender', 'reciever', 'amount']
+    if not all (key in json for key in transaction_keys):
+        return 'Some elements of the transaction are missing', 400
+    index = blockchain.add_transaction(json['sender'], json['reciever'], json['amount'])
+    response = {'message': f'This transaction will be added to Block {index}'}
+    return jsonify(response), 201
 
 # 3 | Decentralizing our Blockchain
 
